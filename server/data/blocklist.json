@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "sites": [
+    {
+      "id": 2,
+      "site": "asurascans.com",
+      "dateAdded": "2026-04-01T02:16:59.585Z"
+    },
+    {
+      "id": 1,
+      "site": "google.com",
+      "dateAdded": "2026-04-01T02:08:23.328Z"
+    }
+  ]
+}
