@@ -9,7 +9,7 @@
 #include "blocklist.h"
 #include "hosts.h"
 
-#define PORT 443
+#define PORT 8080
 #define BACKLOG 10
 #define BUFFER_SIZE 8192
 #define DATA_FILE "data/blocklist.txt"
