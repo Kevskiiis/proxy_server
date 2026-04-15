@@ -1,6 +1,6 @@
 async function parseResponse(response) {
   const payload = await response.json()
-
+  
   if (!response.ok) {
     throw new Error(payload.error || 'Request failed.')
   }
