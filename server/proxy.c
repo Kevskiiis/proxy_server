@@ -191,24 +191,35 @@ int main() {
             continue;
         }
 
-        // Read the HTTP request from the client:
-        char buffer[BUFFER_SIZE];
-        memset(buffer, 0, sizeof(buffer));
-        int bytes_received = recv(client_fd, buffer, sizeof(buffer) - 1, 0);
-        if (bytes_received <= 0) {
-            perror("recv failed");
-            close(client_fd);
-            continue;
+        pid_t pid = fork();
+        if (pid == 0) {
+            // Child process handles this connection:
+            close(server_fd);
+
+            // Read the HTTP request from the client:
+            char buffer[BUFFER_SIZE];
+            memset(buffer, 0, sizeof(buffer));
+            int bytes_received = recv(client_fd, buffer, sizeof(buffer) - 1, 0);
+            if (bytes_received <= 0) {
+                perror("recv failed");
+                close(client_fd);
+                exit(0);
+            }
+
+            printf("Received request:\n%s\n", buffer);
+
+            // Detect if it's HTTPS (CONNECT) or plain HTTP:
+            if (strncmp(buffer, "CONNECT", 7) == 0) {
+                handle_https_tunnel(client_fd, buffer);  // HTTPS tunnel
+            } else {
+                handle_http(client_fd, buffer, bytes_received); // Plain HTTP
+            }
+
+            exit(0);
         }
 
-        printf("Received request:\n%s\n", buffer);
-
-        // Detect if it's HTTPS (CONNECT) or plain HTTP:
-        if (strncmp(buffer, "CONNECT", 7) == 0) {
-            handle_https_tunnel(client_fd, buffer);  // HTTPS tunnel
-        } else {
-            handle_http(client_fd, buffer, bytes_received); // Plain HTTP
-        }
+        // Parent closes its copy and loops back to accept:
+        close(client_fd);
     }
 
     close(server_fd);
