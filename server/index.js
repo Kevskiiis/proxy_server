@@ -1,183 +1,189 @@
 import http from 'node:http'
-import { URL } from 'node:url'
-import {
-  getDataFilePath,
-  loadBlocklist,
-  saveBlocklist,
-} from './blocklistStore.js'
-import { getEnforcementStatus, syncHostsFile } from './hostsEnforcer.js'
+import { spawn } from 'node:child_process'
+import { access } from 'node:fs/promises'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+import { startJsBackend } from './jsBackend.js'
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const PORT = Number(process.env.PORT || 3001)
+const C_BACKEND_PORT = Number(process.env.C_BACKEND_PORT || 3101)
+const argv = new Map(
+  process.argv.slice(2)
+    .filter((value) => value.startsWith('--'))
+    .map((value) => {
+      const [key, rawValue = 'true'] = value.slice(2).split('=')
+      return [key, rawValue]
+    }),
+)
+const backendMode = argv.get('backend') || process.env.BACKEND_IMPL || 'auto'
 
-function normalizeSiteInput(value) {
-  const trimmedValue = value.trim()
+function canHaveBody(method) {
+  return !['GET', 'HEAD'].includes(method || 'GET')
+}
 
-  if (!trimmedValue) {
-    throw new Error('Enter a site to continue.')
-  }
-
-  const candidate = /^https?:\/\//i.test(trimmedValue)
-    ? trimmedValue
-    : `https://${trimmedValue}`
-
-  let parsed
-
+async function fileExists(target) {
   try {
-    parsed = new URL(candidate)
+    await access(target)
+    return true
   } catch {
-    throw new Error('Enter a valid hostname or URL.')
+    return false
+  }
+}
+
+async function findCExecutable() {
+  const candidates = [
+    process.env.C_BACKEND_BIN,
+    path.join(__dirname, 'bin', 'cs_guardian_c_api.exe'),
+    path.join(__dirname, 'bin', 'cs_guardian_c_api'),
+  ].filter(Boolean)
+
+  for (const candidate of candidates) {
+    if (await fileExists(candidate)) {
+      return candidate
+    }
   }
 
-  const hostname = parsed.hostname.replace(/^www\./i, '').toLowerCase()
+  return null
+}
 
-  if (!hostname || hostname.includes(' ')) {
-    throw new Error('Enter a valid hostname or URL.')
+async function waitForBackend(url, timeoutMs = 5000) {
+  const start = Date.now()
+
+  while (Date.now() - start < timeoutMs) {
+    try {
+      const response = await fetch(url)
+
+      if (response.ok) {
+        return
+      }
+    } catch {
+      await new Promise((resolve) => setTimeout(resolve, 150))
+    }
   }
 
-  return hostname
+  throw new Error(`Timed out waiting for ${url}`)
 }
 
-function json(response, statusCode, payload) {
-  response.writeHead(statusCode, {
-    'Content-Type': 'application/json',
-  })
-  response.end(JSON.stringify(payload))
-}
-
-function notFound(response) {
-  json(response, 404, { error: 'Route not found.' })
-}
-
-async function readJsonBody(request) {
+async function readBody(request) {
   const chunks = []
 
   for await (const chunk of request) {
     chunks.push(chunk)
   }
 
-  if (chunks.length === 0) {
-    return {}
-  }
-
-  return JSON.parse(Buffer.concat(chunks).toString('utf8'))
+  return Buffer.concat(chunks)
 }
 
-function createSiteRecord(currentSites, site) {
-  const nextId = currentSites.length
-    ? Math.max(...currentSites.map((entry) => entry.id)) + 1
-    : 1
+function copyHeaders(sourceHeaders, response) {
+  for (const [key, value] of sourceHeaders.entries()) {
+    if (key.toLowerCase() === 'transfer-encoding') {
+      continue
+    }
 
-  return {
-    id: nextId,
-    site,
-    dateAdded: new Date().toISOString(),
+    response.setHeader(key, value)
   }
 }
 
-const server = http.createServer(async (request, response) => {
-  const requestUrl = new URL(request.url, `http://${request.headers.host}`)
+function createProxyServer(targetPort, childProcess) {
+  const server = http.createServer(async (request, response) => {
+    if (childProcess.exitCode !== null) {
+      response.writeHead(502, { 'Content-Type': 'application/json' })
+      response.end(JSON.stringify({ error: 'The C backend is not running.' }))
+      return
+    }
 
-  try {
-    if (request.method === 'GET' && requestUrl.pathname === '/api/health') {
-      const state = await loadBlocklist()
-      const enforcement = getEnforcementStatus()
-
-      json(response, 200, {
-        status: 'ok',
-        service: 'cs-guardian-api',
-        enforcementMode: enforcement.mode,
-        dataFile: getDataFilePath(),
-        hostsFile: enforcement.hostsFile,
-        enforcement: enforcement.lastSync,
-        siteCount: state.sites.length,
+    try {
+      const body = await readBody(request)
+      const upstream = await fetch(`http://127.0.0.1:${targetPort}${request.url}`, {
+        method: request.method,
+        headers: {
+          'content-type': request.headers['content-type'] || 'application/json',
+        },
+        body: canHaveBody(request.method) ? body : undefined,
       })
-      return
+
+      response.statusCode = upstream.status
+      copyHeaders(upstream.headers, response)
+      const payload = Buffer.from(await upstream.arrayBuffer())
+      response.end(payload)
+    } catch (error) {
+      response.writeHead(502, { 'Content-Type': 'application/json' })
+      response.end(JSON.stringify({
+        error: `Failed to reach the C backend. ${error.message}`,
+      }))
     }
-
-    if (request.method === 'GET' && requestUrl.pathname === '/api/sites') {
-      const state = await loadBlocklist()
-      json(response, 200, { sites: state.sites })
-      return
-    }
-
-    if (request.method === 'POST' && requestUrl.pathname === '/api/sites') {
-      const body = await readJsonBody(request)
-      const site = normalizeSiteInput(body.site ?? '')
-      const state = await loadBlocklist()
-
-      if (state.sites.some((entry) => entry.site === site)) {
-        json(response, 409, { error: 'That site is already blocked.' })
-        return
-      }
-
-      const nextSite = createSiteRecord(state.sites, site)
-      const nextState = {
-        ...state,
-        sites: [nextSite, ...state.sites],
-      }
-
-      await syncHostsFile(nextState.sites)
-      await saveBlocklist(nextState)
-      json(response, 201, { site: nextSite, sites: nextState.sites })
-      return
-    }
-
-    if (request.method === 'DELETE' && requestUrl.pathname === '/api/sites') {
-      const state = await loadBlocklist()
-      const nextState = {
-        ...state,
-        sites: [],
-      }
-
-      await syncHostsFile(nextState.sites)
-      await saveBlocklist(nextState)
-      json(response, 200, { sites: [] })
-      return
-    }
-
-    if (request.method === 'DELETE' && requestUrl.pathname.startsWith('/api/sites/')) {
-      const encodedSite = requestUrl.pathname.replace('/api/sites/', '')
-      const site = normalizeSiteInput(decodeURIComponent(encodedSite))
-      const state = await loadBlocklist()
-
-      if (!state.sites.some((entry) => entry.site === site)) {
-        json(response, 404, { error: 'That site is not in the block list.' })
-        return
-      }
-
-      const nextState = {
-        ...state,
-        sites: state.sites.filter((entry) => entry.site !== site),
-      }
-
-      await syncHostsFile(nextState.sites)
-      await saveBlocklist(nextState)
-      json(response, 200, { sites: nextState.sites })
-      return
-    }
-
-    notFound(response)
-  } catch (error) {
-    if (error instanceof SyntaxError) {
-      json(response, 400, { error: 'Invalid JSON body.' })
-      return
-    }
-
-    json(response, 400, { error: error.message || 'Unexpected server error.' })
-  }
-})
-
-async function startServer() {
-  try {
-    const state = await loadBlocklist()
-    await syncHostsFile(state.sites)
-  } catch (error) {
-    console.error(`Initial hosts sync failed: ${error.message}`)
-  }
+  })
 
   server.listen(PORT, () => {
-    console.log(`CS Guardian API listening on http://localhost:${PORT}`)
+    console.log(`CS Guardian API proxy listening on http://localhost:${PORT}`)
   })
+
+  return server
 }
 
-startServer()
+async function startCBackendOrThrow() {
+  const executable = await findCExecutable()
+
+  if (!executable) {
+    throw new Error(
+      'No compiled C backend was found. Build server/bin/cs_guardian_c_api first or set C_BACKEND_BIN.',
+    )
+  }
+
+  const child = spawn(executable, [], {
+    cwd: __dirname,
+    env: {
+      ...process.env,
+      CS_GUARDIAN_C_PORT: String(C_BACKEND_PORT),
+      CS_GUARDIAN_C_DATA_FILE: process.env.C_BACKEND_DATA_FILE || path.join(__dirname, 'data', 'blocklist.txt'),
+      HOSTS_FILE_PATH: process.env.HOSTS_FILE_PATH || path.join(__dirname, 'data', 'hosts_test.txt'),
+    },
+    stdio: 'inherit',
+  })
+
+  const cleanup = () => {
+    if (child.exitCode === null) {
+      child.kill()
+    }
+  }
+
+  child.on('error', (error) => {
+    console.error(`Failed to start the C backend: ${error.message}`)
+  })
+
+  process.on('exit', cleanup)
+  process.on('SIGINT', () => {
+    cleanup()
+    process.exit(0)
+  })
+  process.on('SIGTERM', () => {
+    cleanup()
+    process.exit(0)
+  })
+
+  await waitForBackend(`http://127.0.0.1:${C_BACKEND_PORT}/api/health`)
+  createProxyServer(C_BACKEND_PORT, child)
+  console.log(`Using C backend executable: ${executable}`)
+}
+
+async function start() {
+  if (backendMode === 'js') {
+    startJsBackend({ port: PORT })
+    return
+  }
+
+  try {
+    await startCBackendOrThrow()
+  } catch (error) {
+    if (backendMode === 'c') {
+      console.error(error.message)
+      process.exit(1)
+    }
+
+    console.warn(`C backend unavailable, falling back to JS backend. ${error.message}`)
+    startJsBackend({ port: PORT })
+  }
+}
+
+start()

@@ -5,8 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "concurrently \"npm:dev:server\" \"npm:dev:client\"",
+    "dev:c": "concurrently \"npm:dev:server:c\" \"npm:dev:client\"",
     "dev:client": "vite",
     "dev:server": "node --watch server/index.js",
+    "dev:server:c": "node --watch server/index.js --backend=c",
+    "dev:server:js": "node --watch server/index.js --backend=js",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview"

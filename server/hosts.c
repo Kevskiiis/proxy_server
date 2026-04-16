@@ -1,10 +1,32 @@
 #include "hosts.h"
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
 
 #define HOSTS_BLOCK_START "# CS_GUARDIAN_START"
 #define HOSTS_BLOCK_END   "# CS_GUARDIAN_END"
 #define MAX_CONTENT_SIZE 65536
+
+static EnforcementStatus last_status = {
+    1,
+    0,
+    "Hosts file has not been synced yet.",
+    ""
+};
+
+static void set_timestamp(char *buffer, size_t buffer_size)
+{
+    time_t now = time(NULL);
+    struct tm time_info;
+
+#ifdef _WIN32
+    gmtime_s(&time_info, &now);
+#else
+    gmtime_r(&now, &time_info);
+#endif
+
+    strftime(buffer, buffer_size, "%Y-%m-%dT%H:%M:%SZ", &time_info);
+}
 
 static void append_managed_block(char *buffer, const Blocklist *list)
 {
@@ -17,13 +39,19 @@ static void append_managed_block(char *buffer, const Blocklist *list)
     for (i = 0; i < list->count; i++)
     {
         strcat(buffer, "127.0.0.1 ");
-        strcat(buffer, list->sites[i]);
+        strcat(buffer, list->sites[i].site);
+        strcat(buffer, "\n");
+        strcat(buffer, "::1 ");
+        strcat(buffer, list->sites[i].site);
         strcat(buffer, "\n");
 
-        if (strncmp(list->sites[i], "www.", 4) != 0)
+        if (strncmp(list->sites[i].site, "www.", 4) != 0)
         {
             strcat(buffer, "127.0.0.1 www.");
-            strcat(buffer, list->sites[i]);
+            strcat(buffer, list->sites[i].site);
+            strcat(buffer, "\n");
+            strcat(buffer, "::1 www.");
+            strcat(buffer, list->sites[i].site);
             strcat(buffer, "\n");
         }
     }
@@ -72,11 +100,27 @@ int sync_hosts_file(const Blocklist *list, const char *hosts_filename)
     file = fopen(hosts_filename, "w");
     if (file == NULL)
     {
+        last_status.ok = 0;
+        last_status.dns_flushed = 0;
+        snprintf(last_status.message, sizeof(last_status.message),
+                 "Failed to open hosts file for writing.");
+        set_timestamp(last_status.synced_at, sizeof(last_status.synced_at));
         return 0;
     }
 
     fputs(content, file);
     fclose(file);
 
+    last_status.ok = 1;
+    last_status.dns_flushed = 0;
+    snprintf(last_status.message, sizeof(last_status.message),
+             "Synced %d blocked site(s) to hosts file.", list->count);
+    set_timestamp(last_status.synced_at, sizeof(last_status.synced_at));
+
     return 1;
+}
+
+EnforcementStatus get_enforcement_status(void)
+{
+    return last_status;
 }
