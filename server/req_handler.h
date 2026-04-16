@@ -10,7 +10,7 @@
 void parse_host(const char *request, char *host_out, int *port_out) {
     *port_out = 80; // Default to HTTP port
 
-    // Look for the "Host: " header in the request
+    // Look for the "Host: " header in the request:S
     const char *host_start = strstr(request, "Host: ");
     if (host_start == NULL) return;
 
