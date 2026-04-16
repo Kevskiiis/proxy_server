@@ -1,0 +1,19 @@
+# CS_GUARDIAN_START
+# Managed by CS Guardian
+127.0.0.1 bing.com
+::1 bing.com
+127.0.0.1 www.bing.com
+::1 www.bing.com
+127.0.0.1 asurascans.com
+::1 asurascans.com
+127.0.0.1 www.asurascans.com
+::1 www.asurascans.com
+127.0.0.1 google.com
+::1 google.com
+127.0.0.1 www.google.com
+::1 www.google.com
+127.0.0.1 canvas.wsu.edu
+::1 canvas.wsu.edu
+127.0.0.1 www.canvas.wsu.edu
+::1 www.canvas.wsu.edu
+# CS_GUARDIAN_END
