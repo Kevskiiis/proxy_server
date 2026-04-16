@@ -1,11 +1,14 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -g
-TARGET = proxy
+TARGETS = proxy server
 
-all: $(TARGET)
+all: $(TARGETS)
 
-$(TARGET): main.c blocklist.c hosts.c
-	$(CC) $(CFLAGS) main.c blocklist.c hosts.c -o $(TARGET)
+proxy: proxy.c req_handler.h
+	$(CC) $(CFLAGS) proxy.c -o proxy
+
+server: main.c blocklist.c hosts.c
+	$(CC) $(CFLAGS) main.c blocklist.c hosts.c -o server
 
 clean:
-	rm -f $(TARGET)
+	rm -f $(TARGETS)
