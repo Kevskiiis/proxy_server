@@ -77,7 +77,7 @@ int db_get_all_sites(SiteList *list) {
     return 1;
 }
 
-// INSERT a site — returns 0 if it already exists:
+// INSERT a site and returns 0 if it already exists:
 int db_add_site(const char *site) {
     sqlite3 *db;
     sqlite3_stmt *stmt;
@@ -104,10 +104,11 @@ int db_add_site(const char *site) {
     sqlite3_finalize(stmt);
     sqlite3_close(db);
 
-    return (changed > 0);  // 0 means site already existed
+    // 0 means site already existed:
+    return (changed > 0);  
 }
 
-// DELETE a site by name — returns 0 if it wasn't found:
+// DELETE a site by name and returns 0 if it wasn't found:
 int db_remove_site(const char *site) {
     sqlite3 *db;
     sqlite3_stmt *stmt;
@@ -134,7 +135,8 @@ int db_remove_site(const char *site) {
     sqlite3_finalize(stmt);
     sqlite3_close(db);
 
-    return (changed > 0);  // 0 means site wasn't in the DB
+    // 0 means site wasn't in the DB:
+    return (changed > 0);
 }
 
 // DELETE all sites:
@@ -159,7 +161,7 @@ int db_clear_sites() {
     return 1;
 }
 
-// Check if a site exists — returns 1 if found:
+// Check if a site exists  and returns 1 if found:
 int db_site_exists(const char *site) {
     sqlite3 *db;
     sqlite3_stmt *stmt;
