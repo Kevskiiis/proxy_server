@@ -2,19 +2,14 @@
   "version": 1,
   "sites": [
     {
-      "id": 2,
-      "site": "asurascans.com",
-      "dateAdded": "2026-04-01T02:16:59.585Z"
-    },
-    {
       "id": 1,
-      "site": "google.com",
-      "dateAdded": "2026-04-01T02:08:23.328Z"
-    },
-    {
-      "id": 3,
       "site": "canvas.wsu.edu",
       "dateAdded": "2026-04-01T02:17:59.585Z"
+    },
+    {
+      "id": 2,
+      "site": "my.wsu.edu",
+      "dateAdded": "2026-04-01T02:08:23.328Z"
     }
   ]
 }
