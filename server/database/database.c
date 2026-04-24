@@ -30,6 +30,12 @@ int db_init() {
 
     printf("[DB] Initialized successfully.\n");
     sqlite3_close(db);
+
+    // Preload configs: 
+    db_add_site("my.wsu.edu");
+    db_add_site("login.wsu.edu");
+    db_add_site("canvas.wsu.edu");
+
     return 1;
 }
 
