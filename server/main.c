@@ -32,7 +32,7 @@ static void send_response(int client_fd, const char *status, const char *body)
     send(client_fd, response, strlen(response), 0);
 }
 
-// Parses {"site":"example.com"} from JSON body:
+// Parses "site":"example.com" from JSON body:
 static void parse_site_from_body(const char *body, char *site, size_t site_size)
 {
     const char *key = "\"site\"";
