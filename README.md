@@ -122,15 +122,12 @@ sudo apt install sqlite3 libsqlite3-dev
 The frontend requires Node.js. Download and install using:
 ```bash
 # Step 1:
-sudo apt install curl
-
-# Step 2:
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
 
-# Step 3:
+# Step 2:
 source ~/.bashrc
 
-# Step 4:
+# Step 3:
 nvm install 22.12
 ```
 
@@ -238,9 +235,15 @@ Expected output:
 
 ### Test HTTPS Tunneling
 ```bash
-curl -x http://localhost:3128 https://example.com
+curl -x http://localhost:3128 https://chatgpt.com
 ```
 Expected: Page content is returned, confirming HTTPS tunneling works.
+
+### Test the frontend
+Try to add a new site to the proxy using the frontend. Then do: (Replace the "new_site_url" with the site you blocked)
+```bash
+curl -x http://localhost:3128 http://[new_site_url]
+```
 
 ---
 
