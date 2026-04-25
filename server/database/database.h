@@ -1,9 +1,7 @@
 #ifndef DATABASE_H
 #define DATABASE_H
-
 #define DB_PATH "database/managed_sites.db"
-#define MAX_SITES 256
-#define MAX_SITE_LENGTH 256
+#include "../blocklist.h"
 
 typedef struct {
     int  id;

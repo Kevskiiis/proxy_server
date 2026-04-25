@@ -1,7 +1,7 @@
 #ifndef BLOCKLIST_H
 #define BLOCKLIST_H
 
-#define MAX_SITES 100
+#define MAX_SITES 256
 #define MAX_SITE_LENGTH 256
 
 typedef struct
