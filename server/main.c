@@ -14,6 +14,7 @@
 #define BUFFER_SIZE 8192
 #define HOSTS_FILE "data/hosts_test.txt"
 
+// Send reponses to the client: 
 static void send_response(int client_fd, const char *status, const char *body)
 {
     char response[BUFFER_SIZE];
@@ -77,6 +78,7 @@ static void parse_site_from_body(const char *body, char *site, size_t site_size)
     site[len] = '\0';
 }
 
+// Extract the site from the path: 
 static void extract_site_from_path(const char *path, char *site, size_t site_size)
 {
     const char *prefix = "/api/sites/";

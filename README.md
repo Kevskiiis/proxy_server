@@ -118,7 +118,18 @@ sudo apt install make
 sudo apt install sqlite3 libsqlite3-dev
 ```
 
-### 5. Node.js and NPM
+### 5. Curl
+Check if curl is installed: 
+```bash
+curl --version
+```
+
+If not installed: 
+```bash
+sudo apt install curl
+```
+
+### 6. Node.js and NPM
 The frontend requires Node.js. Download and install using:
 ```bash
 # Step 1:
@@ -211,7 +222,7 @@ Open `http://localhost:5173/` in your browser to access the dashboard. From here
 
 ## Testing the Proxy
 
-With all three components running, open a fourth terminal and use `curl` to test the proxy.
+With all three components running, open a FOURTH TERMINAL and use `curl` to test the proxy.
 
 ### Test a Non-Blocked Site
 ```bash
@@ -228,9 +239,12 @@ curl -x http://localhost:3128 http://canvas.wsu.edu
 
 Expected output:
 ```html
-<html><body><h1>403 Forbidden</h1>
-<p>Access to <b>canvas.wsu.edu</b> is blocked by the proxy.</p>
-</body></html>
+<html>
+  <body>
+    <h1>403 Forbidden</h1>
+      <p>Access to <b>canvas.wsu.edu</b> is blocked by the proxy.</p>
+  </body>
+</html>
 ```
 
 ### Test HTTPS Tunneling
@@ -244,6 +258,15 @@ Try to add a new site to the proxy using the frontend. Then do: (Replace the "ne
 ```bash
 curl -x http://localhost:3128 http://[new_site_url]
 ```
+Expected: You should get "403 Forbidden" message. 
+
+Then remove the site using the frontend, and try the command again:
+```bash
+curl -x http://localhost:3128 http://[new_site_url]
+```
+Expected: The site content should now be returned properly, or it may return nothing but simply go to a new command line which is normal behavior. 
+
+You may also try using the side menu in the frontend, and navigate to settings to test those features.
 
 ---
 
@@ -276,7 +299,7 @@ Take the IP address before the `/20` — in this example it is `172.22.144.50`.
 Close and reopen your browser. All traffic will now route through the proxy.
 
 - Allowed sites load normally
-- Blocked sites (e.g. `login.wsu.edu`) return a `403 Forbidden` page
+- Blocked sites (e.g. `login.wsu.edu`) return a `403 Forbidden` page, or may simply say it failed to load.
 
 > **Note:** The WSL IP address changes every time WSL restarts. You will need to repeat Steps 1 and 2 after each restart.
 
@@ -288,6 +311,6 @@ Close and reopen your browser. All traffic will now route through the proxy.
 
 - **IPv4 only** — hostnames are resolved to IPv4 addresses only. IPv6-only networks are not supported.
 - **HTTPS is tunneled, not inspected** — the proxy can block HTTPS sites by hostname but cannot read or modify the encrypted content.
-- **Local only** — this project is designed to run on a single local machine. It is not intended for deployment as a shared network proxy.
+- **Local only** — this project is designed to run on a single local machine. It is not intended for deployment as a shared network proxy. Although, in our demo presentation, we did host the proxy on a Microsoft Azure virtual machine in the cloud. This allowed anyone with the public IP and port to connect to it from anywhere. However, for the purposes of testing our project, we made it local in our last few updates. 
 - **WSL IP changes on restart** — if using WSL, your IP address is reassigned each time WSL starts. Update your Windows proxy settings accordingly.
 - **No authentication** — the proxy has no password protection. Anyone on the same network who knows your WSL IP and port can route traffic through it.

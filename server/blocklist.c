@@ -2,11 +2,13 @@
 #include <stdio.h>
 #include <string.h>
 
+// Count how many sites are blocked: 
 void init_blocklist(Blocklist *list)
 {
     list->count = 0;
 }
 
+// Load the entire blocklist: 
 int load_blocklist(Blocklist *list, const char *filename)
 {
     FILE *file = fopen(filename, "r");
@@ -32,6 +34,7 @@ int load_blocklist(Blocklist *list, const char *filename)
     return 1;
 }
 
+// Save the blocklist:
 int save_blocklist(const Blocklist *list, const char *filename)
 {
     FILE *file = fopen(filename, "w");
@@ -51,6 +54,7 @@ int save_blocklist(const Blocklist *list, const char *filename)
     return 1;
 }
 
+// Check if site exists: 
 int site_exists(const Blocklist *list, const char *site)
 {
     int i;
@@ -66,6 +70,7 @@ int site_exists(const Blocklist *list, const char *site)
     return 0;
 }
 
+// Add a site: 
 int add_site(Blocklist *list, const char *site)
 {
     if (list->count >= MAX_SITES || site_exists(list, site))
@@ -80,6 +85,7 @@ int add_site(Blocklist *list, const char *site)
     return 1;
 }
 
+// Remove site: 
 int remove_site(Blocklist *list, const char *site)
 {
     int i;
@@ -102,6 +108,7 @@ int remove_site(Blocklist *list, const char *site)
     return 0;
 }
 
+// Clear site: 
 void clear_sites(Blocklist *list)
 {
     list->count = 0;
