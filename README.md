@@ -122,12 +122,15 @@ sudo apt install sqlite3 libsqlite3-dev
 The frontend requires Node.js. Download and install using:
 ```bash
 # Step 1:
-curl -o https://raw.githubusercontent,com/nvm-sh/nvm/v0.39.7/install.sh | bash
+sudo apt install curl
 
 # Step 2:
-source ~/.bashrc
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
 
 # Step 3:
+source ~/.bashrc
+
+# Step 4:
 nvm install 22.12
 ```
 
