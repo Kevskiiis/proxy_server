@@ -242,7 +242,7 @@ Expected: Page content is returned, confirming HTTPS tunneling works.
 ### Test the frontend
 Try to add a new site to the proxy using the frontend. Then do: (Replace the "new_site_url" with the site you blocked)
 ```bash
-curl -x http://localhost:3128 https://[new_site_url]
+curl -x http://localhost:3128 http://[new_site_url]
 ```
 
 ---
