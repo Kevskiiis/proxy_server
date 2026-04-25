@@ -10,7 +10,7 @@
 void parse_host(const char *request, char *host_out, int *port_out) {
     *port_out = 80; // Default to HTTP port
 
-    // Look for the "Host: " header in the request:S
+    // Look for the "Host: " header in the request:
     const char *host_start = strstr(request, "Host: ");
     if (host_start == NULL) return;
 
@@ -24,7 +24,7 @@ void parse_host(const char *request, char *host_out, int *port_out) {
     }
     host_out[i] = '\0';
 
-    // Check if a port was specified e.g. "Host: example.com:8080"
+    // Check if a port was specified "Host: example.com:8080"
     if (host_start[i] == ':') {
         *port_out = atoi(&host_start[i + 1]);
     }
@@ -37,7 +37,7 @@ int resolve_host(const char *hostname, struct sockaddr_in *dest) {
         return -1;
     }
 
-    // Copy the resolved IP address into dest
+    // Copy the resolved IP address into dest:
     memcpy(&dest->sin_addr, host->h_addr_list[0], host->h_length);
     return 0;
 }

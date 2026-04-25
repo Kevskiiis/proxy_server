@@ -14,6 +14,7 @@ int db_init() {
         return 0;
     }
 
+    // Create the table to save our sites: 
     const char *sql =
         "CREATE TABLE IF NOT EXISTS sites ("
         "  id         INTEGER PRIMARY KEY AUTOINCREMENT,"
@@ -28,10 +29,11 @@ int db_init() {
         return 0;
     }
 
+    // Close the DB and print successful message: 
     printf("[DB] Initialized successfully.\n");
     sqlite3_close(db);
 
-    // Preload configs: 
+    // Preload the blocked sites for testing: 
     db_add_site("my.wsu.edu");
     db_add_site("login.wsu.edu");
     db_add_site("canvas.wsu.edu");
