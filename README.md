@@ -1,5 +1,6 @@
 # CS Guardian – Proxy Server
 
+## Project Overview and Goals
 CS Guardian is a locally-run HTTP/HTTPS proxy server written in C, with a React frontend for managing a site blocklist. Blocked sites return a `403 Forbidden` response to the browser. The blocklist is stored in a SQLite database shared between the proxy and the management API.
 
 The primary goal of this project is to explore low-level networking concepts and implement a functional proxy using the C programming language.
@@ -20,7 +21,7 @@ The primary goal of this project is to explore low-level networking concepts and
 
 ---
 
-## Core Concepts
+## Core Themes Addressed
 
 ### Client-Server Architecture
 The proxy operates as an intermediary between the client and external servers. All browser requests are routed through the proxy before reaching their destination. If a site is on the blocklist, the proxy intercepts the request and returns a `403 Forbidden` response instead of forwarding it.
