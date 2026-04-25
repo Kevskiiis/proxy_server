@@ -235,7 +235,7 @@ Expected output:
 
 ### Test HTTPS Tunneling
 ```bash
-curl -x http://localhost:3128 https://example.com
+curl -x http://localhost:3128 https://https://chatgpt.com
 ```
 Expected: Page content is returned, confirming HTTPS tunneling works.
 
